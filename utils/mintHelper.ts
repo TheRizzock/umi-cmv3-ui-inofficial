@@ -352,34 +352,35 @@ export const buildTx = (
   let tx = transactionBuilder().add(
     mintV2(umi, {
       candyMachine: candyMachine.publicKey,
+      nftMint,
       collectionMint: candyMachine.collectionMint,
       collectionUpdateAuthority: candyMachine.authority,
-      nftMint,
+      mintArgs,
       group: guardToUse.label === "default" ? none() : some(guardToUse.label),
       candyGuard: candyGuard.publicKey,
-      mintArgs,
       tokenStandard: candyMachine.tokenStandard,
     })
   );
-  if (buyBeer) {
-    tx = tx.prepend(
-      transferSol(umi, {
-        destination: publicKey(
-          "BeeryDvghgcKPTUw3N3bdFDFFWhTWdWHnsLuVebgsGSD"
-        ),
-        amount: sol(Number(0.005)),
-      })
-    );
-  }
+  // if (buyBeer) {
+  //   tx = tx.prepend(
+  //     transferSol(umi, {
+  //       destination: publicKey(
+  //         "BeeryDvghgcKPTUw3N3bdFDFFWhTWdWHnsLuVebgsGSD"
+  //       ),
+  //       amount: sol(Number(0.005)),
+  //     })
+  //   );
+  // }
   tx = tx.prepend(setComputeUnitLimit(umi, { units }));
   tx = tx.prepend(setComputeUnitPrice(umi, { microLamports: parseInt(process.env.NEXT_PUBLIC_MICROLAMPORTS ?? "1001") }));
   tx = tx.setAddressLookupTables(luts);
   tx = tx.setBlockhash(latestBlockhash);
+
+  testTransaction(umi, tx.build(umi))
   return tx.build(umi);
 };
 
-// simulate CU based on Sammys gist https://gist.github.com/stegaBOB/7c0cdc916db4524dd9c285f9e4309475
-export const getRequiredCU = async (umi: Umi, transaction: Transaction) => {
+export const testTransaction = async (umi: Umi, transaction: Transaction) => {
   const defaultCU = 800_000;
   const web3tx = toWeb3JsTransaction(transaction);
   let connection = new Connection(umi.rpc.getEndpoint(), "finalized");
@@ -390,5 +391,45 @@ export const getRequiredCU = async (umi: Umi, transaction: Transaction) => {
   if (simulatedTx.value.err || !simulatedTx.value.unitsConsumed) {
     return defaultCU;
   }
-  return simulatedTx.value.unitsConsumed * 1.2 || defaultCU;
+  console.log(simulatedTx.value);
+}
+
+
+// simulate CU based on Sammys gist https://gist.github.com/stegaBOB/7c0cdc916db4524dd9c285f9e4309475
+// export const getRequiredCU = async (umi: Umi, transaction: Transaction) => {
+//   const defaultCU = 800_000;
+//   const web3tx = toWeb3JsTransaction(transaction);
+//   let connection = new Connection(umi.rpc.getEndpoint(), "finalized");
+//   const simulatedTx = await connection.simulateTransaction(web3tx, {
+//     replaceRecentBlockhash: true,
+//     sigVerify: false,
+//   });
+//   if (simulatedTx.value.err || !simulatedTx.value.unitsConsumed) {
+//     return defaultCU;
+//   }
+//   return simulatedTx.value.unitsConsumed * 1.2 || defaultCU;
+// }
+// Updated function to get required compute units
+export const getRequiredCU = async (umi: Umi, transaction: Transaction) => {
+  const defaultCU = 1_200_000; // Adjusted default compute units
+  const web3tx = toWeb3JsTransaction(transaction);
+  let connection = new Connection(umi.rpc.getEndpoint(), "finalized");
+
+  try {
+    const simulatedTx = await connection.simulateTransaction(web3tx, {
+      replaceRecentBlockhash: true,
+      sigVerify: false,
+    });
+
+    if (simulatedTx.value.err || !simulatedTx.value.unitsConsumed) {
+      console.warn("Simulation error or no units consumed data:", simulatedTx.value.err);
+      return defaultCU;
+    }
+
+    // Adjust compute units with a safety margin
+    return simulatedTx.value.unitsConsumed * 1.2 || defaultCU;
+  } catch (error) {
+    console.error("Error simulating transaction:", error);
+    return defaultCU;
+  }
 }

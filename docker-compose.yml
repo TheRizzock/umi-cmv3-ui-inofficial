@@ -1,0 +1,7 @@
+version: '3'
+services:
+  react-app:
+    image: mint-hegecoin-react-app
+    build: .
+    ports:
+      - "80:80"
