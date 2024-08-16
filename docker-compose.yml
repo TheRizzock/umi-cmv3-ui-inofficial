@@ -1,7 +1,9 @@
 version: '3'
 services:
-  react-app:
-    image: mint-hegecoin-react-app
+  app:
     build: .
     ports:
-      - "80:80"
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    command: npm run start
