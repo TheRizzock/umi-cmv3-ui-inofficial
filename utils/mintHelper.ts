@@ -259,6 +259,15 @@ export const mintArgsBuilder = (
       mint: guards.tokenPayment.value.mint,
     });
   }
+
+  // Added guard, not sure if this is an issue
+  if (guards.botTax.__option === "Some") {
+    mintArgs.botTax = some({
+      lamports: guards.botTax.value.lamports,
+      lastInstruction: guards.botTax.value.lastInstruction,
+    });
+  }
+
   return mintArgs;
 };
 
@@ -276,6 +285,8 @@ export const routeBuilder = async (
       console.error("allowlist not found!");
       return tx2;
     }
+
+
     const allowListProof = await safeFetchAllowListProofFromSeeds(umi, {
       candyGuard: candyMachine.mintAuthority,
       candyMachine: candyMachine.publicKey,
@@ -361,22 +372,16 @@ export const buildTx = (
       tokenStandard: candyMachine.tokenStandard,
     })
   );
-  // if (buyBeer) {
-  //   tx = tx.prepend(
-  //     transferSol(umi, {
-  //       destination: publicKey(
-  //         "BeeryDvghgcKPTUw3N3bdFDFFWhTWdWHnsLuVebgsGSD"
-  //       ),
-  //       amount: sol(Number(0.005)),
-  //     })
-  //   );
-  // }
+
   tx = tx.prepend(setComputeUnitLimit(umi, { units }));
   tx = tx.prepend(setComputeUnitPrice(umi, { microLamports: parseInt(process.env.NEXT_PUBLIC_MICROLAMPORTS ?? "1001") }));
-  tx = tx.setAddressLookupTables(luts);
+  // tx = tx.setAddressLookupTables(luts);
   tx = tx.setBlockhash(latestBlockhash);
 
   testTransaction(umi, tx.build(umi))
+  console.log('wrap')
+  console.log(tx.build(umi))
+  console.log('wrap')
   return tx.build(umi);
 };
 
@@ -389,9 +394,11 @@ export const testTransaction = async (umi: Umi, transaction: Transaction) => {
     sigVerify: false,
   });
   if (simulatedTx.value.err || !simulatedTx.value.unitsConsumed) {
+    console.log('ISSUE')
     return defaultCU;
   }
-  console.log(simulatedTx.value);
+  console.log('Consumed')
+  console.log(simulatedTx);
 }
 
 

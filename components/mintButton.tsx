@@ -131,6 +131,8 @@ const mintClick = async (
     return;
   }
 
+
+
   let buyBeer = false;
   console.log("buyBeer", process.env.NEXT_PUBLIC_BUYMARKBEER);
 
@@ -148,6 +150,9 @@ const mintClick = async (
     const newGuardList = [...guardList];
     newGuardList[guardIndex].minting = true;
     setGuardList(newGuardList);
+
+    console.log(newGuardList)
+    console.log(guardToUse)
 
     let routeBuild = await routeBuilder(umi, guardToUse, candyMachine);
     if (routeBuild && routeBuild.items.length > 0) {
@@ -260,40 +265,6 @@ const mintClick = async (
       console.error("No mint transactions built!");
       return;
     }
-
-    // const simulateTransaction = async (umi: Umi, tx: Transaction) => {
-    //   const connection = umi.rpc; // Get the RPC connection
-    //   const serializedTx = tx.serializedMessage.toString();
-    //   const simulateTxRequest = {
-    //     jsonrpc: "2.0",
-    //     id: 1,
-    //     method: "simulateTransaction",
-    //     params: [serializedTx, { sigVerify: true }]
-    //   };
-    //   const response = await connection.call(simulateTxRequest);
-    //   return response;
-    // };
-    //
-    // // Inside your mintClick function, after building the transactions
-    // console.log("Simulating transactions...");
-    // const simulateResults = await Promise.all(
-    //     mintTxs.map((tx, index) => simulateTransaction(umi, tx))
-    // );
-    // console.log("Simulation results:", simulateResults);
-
-
-    // // Check if any simulation failed
-    // if (simulateResults.some((result) => result.err)) {
-    //   console.error("Simulation failed", simulateResults);
-    //   createStandaloneToast().toast({
-    //     title: "Simulation failed!",
-    //     description: "Please check the console for details.",
-    //     status: "error",
-    //     duration: 900,
-    //     isClosable: true,
-    //   });
-    //   return;
-    // }
 
     updateLoadingText(`Please sign`, guardList, guardToUse.label, setGuardList);
     const signedTransactions = await signAllTransactions(
